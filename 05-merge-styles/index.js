@@ -3,23 +3,25 @@ const { join, parse } = require('path');
 
 const GOAL_DIR = join(__dirname, 'styles');
 
-let cssData = [];
+const mergeStyles = async () => {
+  let cssData = [];
 
-readdir(GOAL_DIR)
-  .then((files) => {
-    const onlyCssFiles = files.filter((file) => parse(file).ext === '.css');
+  const files = await readdir(GOAL_DIR);
 
-    onlyCssFiles.forEach((file, index) => {
-      readFile(join(GOAL_DIR, file))
-        .then((fileContent) => {
-          cssData[index] = fileContent.toString();
+  let cssOnlyFiles = files.filter((file) => parse(file).ext === '.css');
 
-          writeFile(
-            join(__dirname, 'project-dist', 'bundle.css'),
-            cssData.join('')
-          ).catch((error) => console.warn(error));
-        })
-        .catch((error) => console.warn(error));
-    });
-  })
-  .catch((error) => console.warn(error));
+  cssOnlyFiles.forEach(async (fileItem, index) => {
+    let filePath = join(GOAL_DIR, fileItem);
+
+    const content = await readFile(filePath);
+    cssData[index] = content.toString();
+
+    if (cssData.length === cssOnlyFiles.length && !cssData.includes(undefined))
+      await writeFile(
+        join(__dirname, 'project-dist', 'bundle.css'),
+        cssData.join('')
+      );
+  });
+};
+
+mergeStyles();
