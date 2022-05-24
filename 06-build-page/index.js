@@ -15,6 +15,33 @@ const STYLES_FOLDER = join(__dirname, 'styles');
 const COMPONENTS = join(__dirname, 'components');
 
 const buildPage = async () => {
+  try {
+    await mkdir(GOAL_FOLDER);
+
+    const data = await readFile(join(__dirname, 'template.html'));
+    let convertedData = data.toString();
+
+    const readFiles = await readdir(COMPONENTS);
+
+    readFiles.forEach(async (fileItem) => {
+      const fileCont = await readFile(join(COMPONENTS, fileItem));
+
+      convertedData = convertedData.replace(
+        `{{${parse(fileItem).name}}}`,
+        fileCont.toString()
+      );
+
+      writeFile(join(GOAL_FOLDER, 'index.html'), convertedData);
+    });
+
+    copyAssets(join(__dirname, 'assets'), join(GOAL_FOLDER, 'assets'));
+    makeCss();
+  } catch (error) {
+    console.warn(error);
+  }
+};
+
+const makeCss = async () => {
   let cssData = [];
 
   const files = await readdir(STYLES_FOLDER);
@@ -27,41 +54,8 @@ const buildPage = async () => {
     const content = await readFile(filePath);
     cssData[index] = content.toString();
 
-    if (
-      cssData.length === cssOnlyFiles.length &&
-      !cssData.includes(undefined)
-    ) {
-      await writeFile(join(GOAL_FOLDER, 'style.css'), cssData.join(''));
-    }
+    await writeFile(join(GOAL_FOLDER, 'style.css'), cssData.join(''));
   });
-
-  await mkdir(GOAL_FOLDER);
-
-  const data = await readFile(join(__dirname, 'template.html').toString());
-  let convertedData = data.toString();
-
-  const readFiles = await readdir(COMPONENTS);
-  readFiles.forEach(async (fileItem) => {
-    const fileCont = await readFile(join(COMPONENTS, fileItem));
-
-    convertedData = convertedData.replace(
-      `{{${parse(fileItem).name}}}`,
-      fileCont.toString()
-    );
-
-    writeFile(join(GOAL_FOLDER, 'index.html'), convertedData);
-  });
-
-  copyAssets(join(__dirname, 'assets'), join(GOAL_FOLDER, 'assets'));
-};
-
-const startBuild = async () => {
-  try {
-    await rm(GOAL_FOLDER, { recursive: true });
-    await buildPage();
-  } catch (error) {
-    await buildPage();
-  }
 };
 
 const makeAssets = async (from, to) => {
@@ -69,13 +63,11 @@ const makeAssets = async (from, to) => {
   const files = await readdir(from);
 
   files.forEach(async (fileItem) => {
-    let filePath = join(from, fileItem);
-    let filePathCopy = join(to, fileItem);
+    const path = join(from, fileItem);
+    const copyPath = join(to, fileItem);
 
-    const info = await stat(filePath);
-    info.isFile()
-      ? copyFile(filePath, filePathCopy)
-      : copyAssets(filePath, filePathCopy);
+    const info = await stat(path);
+    info.isFile() ? copyFile(path, copyPath) : copyAssets(path, copyPath);
   });
 };
 
@@ -85,6 +77,15 @@ const copyAssets = async (from, to) => {
     await makeAssets(from, to);
   } catch (error) {
     await makeAssets(from, to);
+  }
+};
+
+const startBuild = async () => {
+  try {
+    await rm(GOAL_FOLDER, { recursive: true });
+    await buildPage();
+  } catch (error) {
+    await buildPage();
   }
 };
 
