@@ -3,20 +3,18 @@ const { join, parse } = require('path');
 
 const generatePath = (param = '') => join(__dirname, 'secret-folder', param);
 
-readdir(generatePath())
-  .then((files) =>
-    files.forEach((file) => {
-      const { name, ext } = parse(file);
+const getFilesInFolder = async () => {
+  const folderFiles = await readdir(generatePath());
 
-      stat(generatePath(file))
-        .then((fileStat) => {
-          const { size } = fileStat;
+  folderFiles.forEach(async (fileItem) => {
+    const { name, ext } = parse(fileItem);
 
-          if (fileStat.isFile()) {
-            console.log(`${name} - ${ext.slice(1)} - ${size / 1000}kb`);
-          }
-        })
-        .catch((error) => console.warn(error));
-    })
-  )
-  .catch((error) => console.warn(error));
+    const fileInfo = await stat(generatePath(fileItem));
+
+    if (fileInfo.isFile()) {
+      console.log(`${name} - ${ext.slice(1)} - ${fileInfo.size / 1000}kb`);
+    }
+  });
+};
+
+getFilesInFolder();
