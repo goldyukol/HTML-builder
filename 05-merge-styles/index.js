@@ -2,26 +2,32 @@ const { readdir, readFile, writeFile } = require('fs/promises');
 const { join, parse } = require('path');
 
 const GOAL_DIR = join(__dirname, 'styles');
+const PROJECT_DIST_DIR = join(__dirname, 'project-dist', 'bundle.css');
 
 const mergeStyles = async () => {
-  let cssData = [];
+  try {
+    let cssData = [];
 
-  const files = await readdir(GOAL_DIR);
+    const files = await readdir(GOAL_DIR);
+    const cssOnlyFiles = files.filter(
+      (fileItem) => parse(fileItem).ext === '.css'
+    );
 
-  let cssOnlyFiles = files.filter((file) => parse(file).ext === '.css');
+    cssOnlyFiles.forEach(async (fileItem, i) => {
+      let filePath = join(GOAL_DIR, fileItem);
 
-  cssOnlyFiles.forEach(async (fileItem, index) => {
-    let filePath = join(GOAL_DIR, fileItem);
+      const content = await readFile(filePath);
+      cssData[i] = content.toString();
 
-    const content = await readFile(filePath);
-    cssData[index] = content.toString();
-
-    if (cssData.length === cssOnlyFiles.length && !cssData.includes(undefined))
-      await writeFile(
-        join(__dirname, 'project-dist', 'bundle.css'),
-        cssData.join('')
-      );
-  });
+      if (
+        cssData.length === cssOnlyFiles.length &&
+        !cssData.includes(undefined)
+      )
+        await writeFile(PROJECT_DIST_DIR, cssData.join(''));
+    });
+  } catch (error) {
+    console.warn(error);
+  }
 };
 
 mergeStyles();
