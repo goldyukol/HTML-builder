@@ -19,11 +19,7 @@ const mergeStyles = async () => {
       const content = await readFile(filePath);
       cssData[i] = content.toString();
 
-      if (
-        cssData.length === cssOnlyFiles.length &&
-        !cssData.includes(undefined)
-      )
-        await writeFile(PROJECT_DIST_DIR, cssData.join(''));
+      await writeFile(PROJECT_DIST_DIR, cssData.join(''));
     });
   } catch (error) {
     console.warn(error);
