@@ -4,23 +4,28 @@ const { join } = require('path');
 const FOLDER_DIR = join(__dirname, 'files');
 const FOLDER_DIR_COPY = join(__dirname, 'files-copy');
 
-const updateDir = () => {
-  mkdir(FOLDER_DIR_COPY)
-    .then(() => {
-      readdir(FOLDER_DIR)
-        .then((files) => {
-          files.forEach((fileName) => {
-            copyFile(
-              join(FOLDER_DIR, fileName),
-              join(FOLDER_DIR_COPY, fileName)
-            ).catch((error) => console.warn(error));
-          });
-        })
-        .catch((error) => console.warn(error));
-    })
-    .catch((error) => console.warn(error));
+const startCopyDir = async () => {
+  try {
+    await rm(FOLDER_DIR_COPY, { recursive: true });
+    await updateDir();
+  } catch (error) {
+    await updateDir();
+  }
 };
 
-rm(FOLDER_DIR_COPY, { recursive: true })
-  .then(() => updateDir())
-  .catch(() => updateDir());
+const updateDir = async () => {
+  try {
+    await mkdir(FOLDER_DIR_COPY);
+    const folderFiles = await readdir(FOLDER_DIR);
+    folderFiles.forEach(async (fileItem) => {
+      await copyFile(
+        join(FOLDER_DIR, fileItem),
+        join(FOLDER_DIR_COPY, fileItem)
+      );
+    });
+  } catch (error) {
+    console.warn(error);
+  }
+};
+
+startCopyDir();
